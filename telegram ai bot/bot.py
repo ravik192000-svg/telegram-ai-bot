@@ -176,9 +176,9 @@ async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Usage: /weather city_name")
         return
 
-    city = " ".join(context.args).lower()
+    city = " ".join(context.args)
 
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city},IN&appid={WEATHER_API_KEY}&units=metric"
 
     try:
         response = requests.get(url).json()
@@ -203,6 +203,7 @@ async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(e)
         await update.message.reply_text("Weather service error ❌")
+
 
 
 
@@ -304,6 +305,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
