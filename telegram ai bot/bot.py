@@ -172,37 +172,38 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
 
 # -------- WEATHER COMMAND --------
 async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if len(context.args) == 0:
+    if not context.args:
         await update.message.reply_text("Usage: /weather city_name")
         return
 
-    city = " ".join(context.args)   # ← ye line important hai
+    city = " ".join(context.args).lower()
 
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
 
     try:
-        res = requests.get(url).json()
+        response = requests.get(url).json()
 
-        if res.get("cod") != 200:
+        if response.get("cod") != 200:
             await update.message.reply_text("City not found 😅")
             return
 
-        temp = res["main"]["temp"]
-        desc = res["weather"][0]["description"]
-        humidity = res["main"]["humidity"]
+        temp = response["main"]["temp"]
+        desc = response["weather"][0]["description"]
+        humidity = response["main"]["humidity"]
 
-        reply = (
-            f"🌍 Weather in {city.title()}\n"
-            f"🌡 Temperature: {temp}°C\n"
-            f"☁ Condition: {desc}\n"
-            f"💧 Humidity: {humidity}%"
+        msg = (
+            f"🌤 Weather in {city.title()}\n"
+            f"🌡 Temp: {temp}°C\n"
+            f"💧 Humidity: {humidity}%\n"
+            f"📖 Condition: {desc}"
         )
 
-    except Exception as e:
-        print("WEATHER ERROR:", e)
-        reply = "Weather fetch karne me error aa gaya 😅"
+        await update.message.reply_text(msg)
 
-    await update.message.reply_text(reply)
+    except Exception as e:
+        print(e)
+        await update.message.reply_text("Weather service error ❌")
+
 
 
 
@@ -303,5 +304,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
