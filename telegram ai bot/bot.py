@@ -169,6 +169,7 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
 
         await update.message.reply_text(reply)
 
+print("WEATHER KEY USED:", WEATHER_API_KEY)
 
 # -------- WEATHER COMMAND --------
 async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -305,6 +306,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
