@@ -242,34 +242,44 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # -------- YOUTUBE INFO COMMAND --------
 async def ytinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("Usage: /ytinfo youtube_link")
-        return
-
-    link = context.args[0]
-
     try:
-        ydl_opts = {"quiet": True}
+        if not context.args:
+            await update.message.reply_text("❌ Link do bhai\nExample: /ytinfo <YouTube URL>")
+            return
+
+        url = context.args[0]
+
+        await update.message.chat.send_action(action=ChatAction.TYPING)
+
+        ydl_opts = {
+            "quiet": True,
+            "skip_download": True,   # ❗ IMPORTANT
+            "nocheckcertificate": True,
+            "geo_bypass": True,
+        }
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=False)
+            info = ydl.extract_info(url, download=False)
 
-        title = info.get("title", "Unknown")
-        views = info.get("view_count", 0)
-        duration = info.get("duration", 0) // 60
-        uploader = info.get("uploader", "Unknown")
+        title = info.get("title", "N/A")
+        views = info.get("view_count", "N/A")
+        duration = info.get("duration", 0)
+        uploader = info.get("uploader", "N/A")
 
-        reply = (
-            f"🎬 Title: {title}\n"
-            f"👁 Views: {views}\n"
-            f"⏱ Duration: {duration} min\n"
-            f"📺 Channel: {uploader}"
+        mins, secs = divmod(duration, 60)
+
+        msg = (
+            f"🎬 *Title:* {title}\n"
+            f"👤 *Channel:* {uploader}\n"
+            f"👁️ *Views:* {views}\n"
+            f"⏱️ *Duration:* {mins}m {secs}s"
         )
 
-    except Exception as e:
-        print("YT ERROR:", e)
-        reply = "Video info laane me error 😅"
+        await update.message.reply_text(msg, parse_mode="Markdown")
 
-    await update.message.reply_text(reply)
+    except Exception as e:
+        print("YTINFO ERROR:", e)
+        await update.message.reply_text("❌ Video info laane me error 😅")
 
 
 
@@ -309,6 +319,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
