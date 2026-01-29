@@ -267,21 +267,7 @@ async def ytinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(reply)
 
 
-# -------- AI IMAGE GENERATOR --------
-async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
-        await update.message.reply_text("Usage: /draw description")
-        return
 
-    prompt = " ".join(context.args)
-
-    try:
-        url = f"https://image.pollinations.ai/prompt/{prompt}"
-        await update.message.reply_photo(photo=url, caption=f"🎨 Prompt: {prompt}")
-
-    except Exception as e:
-        print("DRAW ERROR:", e)
-        await update.message.reply_text("Image generate karne me error 😅")
 
 
 
@@ -297,7 +283,7 @@ def main():
     app.add_handler(CommandHandler("weather", weather))
     app.add_handler(CommandHandler("search", search))
     app.add_handler(CommandHandler("ytinfo", ytinfo))
-    app.add_handler(CommandHandler("draw", draw))
+    
 
 
     
@@ -318,3 +304,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
