@@ -172,36 +172,35 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
 
 # -------- WEATHER COMMAND --------
 async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.args:
+    if len(context.args) == 0:
         await update.message.reply_text("Usage: /weather city_name")
         return
 
-    city = " ".join(context.args)
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
+    city = " ".join(context.args)   # ← ye line important hai
+
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
 
     try:
-        data = requests.get(url).json()
+        res = requests.get(url).json()
 
-        if data["cod"] != 200:
+        if res.get("cod") != 200:
             await update.message.reply_text("City not found 😅")
             return
 
-        temp = data["main"]["temp"]
-        desc = data["weather"][0]["description"]
-        humidity = data["main"]["humidity"]
-        wind = data["wind"]["speed"]
+        temp = res["main"]["temp"]
+        desc = res["weather"][0]["description"]
+        humidity = res["main"]["humidity"]
 
         reply = (
-            f"🌍 Weather in {city.title()}:\n"
-            f"🌡 Temp: {temp}°C\n"
-            f"🌥 Condition: {desc}\n"
-            f"💧 Humidity: {humidity}%\n"
-            f"🌬 Wind: {wind} m/s"
+            f"🌍 Weather in {city.title()}\n"
+            f"🌡 Temperature: {temp}°C\n"
+            f"☁ Condition: {desc}\n"
+            f"💧 Humidity: {humidity}%"
         )
 
     except Exception as e:
-        print(e)
-        reply = "Weather fetch karne me error 😅"
+        print("WEATHER ERROR:", e)
+        reply = "Weather fetch karne me error aa gaya 😅"
 
     await update.message.reply_text(reply)
 
@@ -304,4 +303,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
