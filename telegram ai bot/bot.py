@@ -76,6 +76,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         reply = chat_completion.choices[0].message.content
         user_memory[user_id].append({"role": "assistant", "content": reply})
+        # Memory limit (sirf last 10 messages rakhega)
+     if len(user_memory[user_id]) > 10:
+        user_memory[user_id] = user_memory[user_idel][:-10]
+
 
     except Exception as e:
         print("ERROR:", e)
@@ -100,7 +104,12 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     r = sr.Recognizer()
     with sr.AudioFile("voice.wav") as source:
         audio = r.record(source)
-        text = r.recognize_google(audio)
+       try:
+   text = r.recognize_google(audio)
+except:
+    await update.message.reply_text("Voice samajh nahi aaya 😅")
+    return
+
 
     user_id = update.message.from_user.id
 
@@ -143,6 +152,10 @@ async def reset_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # -------- GROUP MESSAGE HANDLER --------
+bot_username = (await context.bot.get_me()).username.lower()
+if f"@{bot_username}" not in update.message.text.lower():
+    return
+
 async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text.lower()
     bot_username = context.bot.username.lower()
@@ -163,6 +176,9 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
             )
             reply = chat_completion.choices[0].message.content
             user_memory[user_id].append({"role": "assistant", "content": reply})
+             # Memory limit (sirf last 10 messages rakhega)
+        if len(user_memory[user_id]) > 10:
+            user_memory[user_id] = user_memory[user_idel][:-10]
         except Exception as e:
             print("ERROR:", e)
             reply = "AI error 😅"
@@ -187,7 +203,8 @@ async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
         data = response.json()
 
         # Agar city galat ho ya key issue ho
-        if data.get("cod") != "200":
+        if str(data.get("cod")) != "200":
+
             await update.message.reply_text("❌ City not found 😅")
             return
 
@@ -251,12 +268,15 @@ async def ytinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.chat.send_action(action=ChatAction.TYPING)
 
-        ydl_opts = {
-            "quiet": True,
-            "skip_download": True,   # ❗ IMPORTANT
-            "nocheckcertificate": True,
-            "geo_bypass": True,
-        }
+       ydl_opts = {
+    "quiet": True,
+    "user_agent": "Mozilla/5.0",
+    "extractor_args": {"youtube": {"player_client": ["android"]}},
+    "skip_download": True,  # IMPORTANT
+    "nocheckcertificate": True,
+    "geo_bypass": True,
+}
+
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -292,7 +312,12 @@ async def ytinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+   # Private chat ke liye
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
+
+# Group chat ke liye
+    app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_group_message))
+
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_group_message))
     app.add_handler(CommandHandler("weather", weather))
@@ -319,6 +344,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
