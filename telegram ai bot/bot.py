@@ -174,36 +174,39 @@ print("WEATHER KEY USED:", WEATHER_API_KEY)
 # -------- WEATHER COMMAND --------
 async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Usage: /weather city_name")
+        await update.message.reply_text("❌ Use like this: /weather delhi")
         return
 
     city = " ".join(context.args)
 
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city},IN&appid={WEATHER_API_KEY}&units=metric"
+    # FREE PLAN compatible endpoint (forecast API)
+    url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={WEATHER_API_KEY}&units=metric"
 
     try:
-        response = requests.get(url).json()
+        response = requests.get(url)
+        data = response.json()
 
-        if response.get("cod") != 200:
-            await update.message.reply_text("City not found 😅")
+        # Agar city galat ho ya key issue ho
+        if data.get("cod") != "200":
+            await update.message.reply_text("❌ City not found 😅")
             return
 
-        temp = response["main"]["temp"]
-        desc = response["weather"][0]["description"]
-        humidity = response["main"]["humidity"]
+        # Forecast data se current-like first entry lete hain
+        temp = data["list"][0]["main"]["temp"]
+        desc = data["list"][0]["weather"][0]["description"]
 
-        msg = (
-            f"🌤 Weather in {city.title()}\n"
-            f"🌡 Temp: {temp}°C\n"
-            f"💧 Humidity: {humidity}%\n"
-            f"📖 Condition: {desc}"
+        reply = (
+            f"🌤 Weather in {city.title()}:\n"
+            f"🌡 Temperature: {temp}°C\n"
+            f"☁ Condition: {desc}"
         )
 
-        await update.message.reply_text(msg)
+        await update.message.reply_text(reply)
 
     except Exception as e:
-        print(e)
-        await update.message.reply_text("Weather service error ❌")
+        print("WEATHER ERROR:", e)
+        await update.message.reply_text("⚠ Weather service error aa gaya")
+
 
 
 
@@ -306,6 +309,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
