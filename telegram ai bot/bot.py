@@ -12,6 +12,10 @@ from ddgs import DDGS
 import yt_dlp
 import logging
 import PyPDF2
+from openai import OpenAI
+import base64
+
+
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -21,6 +25,9 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
 client = Groq(api_key=GROQ_API_KEY)
+
+vision_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 user_memory = {}
 user_mode = {}
@@ -239,6 +246,37 @@ async def handle_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("📄 PDF loaded! Now ask your question.")
 
+# === DRAW FUNCTION ===
+async def draw_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Use: /draw <image description>")
+        return
+
+    prompt = " ".join(context.args)
+
+    await update.message.reply_text("🎨 Image bana raha hoon...")
+
+    try:
+        result = vision_client.images.generate(
+            model="gpt-image-1",
+            prompt=prompt,
+            size="1024x1024"
+        )
+
+        image_base64 = result.data[0].b64_json
+
+        with open("generated.png", "wb") as f:
+            f.write(base64.b64decode(image_base64))
+
+        await update.message.reply_photo(photo=open("generated.png", "rb"))
+
+        os.remove("generated.png")
+
+    except Exception as e:
+        print("IMAGE ERROR:", e)
+        await update.message.reply_text("Image generate karne me error 😅")
+
+
 
 
 # ===== MAIN =====
@@ -256,6 +294,8 @@ def main():
     app.add_handler(CommandHandler("motivation", set_motivation))
     app.add_handler(CommandHandler("normal", set_normal))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
+    app.add_handler(CommandHandler("draw", draw_image))
+
 
 
     print("🤖 Bot running...")
@@ -263,6 +303,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
