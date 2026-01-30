@@ -5,3 +5,6 @@ pydub
 requests
 ddgs
 yt-dlp
+PyPDF2
+
+
