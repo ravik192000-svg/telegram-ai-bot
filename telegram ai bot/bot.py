@@ -173,46 +173,41 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ===== YTINFO =====
 async def ytinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("❌ Use like this:\n/ytinfo <YouTube URL>")
+        return
+
+    url = context.args[0]
+
+    await update.message.chat.send_action(action=ChatAction.TYPING)
+
+    ydl_opts = {
+        "quiet": True,
+        "user_agent": "Mozilla/5.0",
+        "skip_download": True,
+        "nocheckcertificate": True,
+        "geo_bypass": True,
+        "extract_flat": True,  # important fallback mode
+    }
+
     try:
-        if not context.args:
-            await update.message.reply_text("❌ Use like this:\n/ytinfo <YouTube URL>")
-            return
-
-        url = context.args[0]
-
-        await update.message.chat.send_action(action=ChatAction.TYPING)
-
-        ydl_opts = {
-            "quiet": True,
-            "user_agent": "Mozilla/5.0",
-            "extractor_args": {"youtube": {"player_client": ["android"]}},
-            "skip_download": True,
-            "nocheckcertificate": True,
-            "geo_bypass": True,
-        }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
         title = info.get("title", "N/A")
-        views = info.get("view_count", "N/A")
-        duration = info.get("duration", 0)
         uploader = info.get("uploader", "N/A")
 
-        mins, secs = divmod(duration, 60)
-
-        msg = (
-            f"🎬 *Title:* {title}\n"
-            f"👤 *Channel:* {uploader}\n"
-            f"👁️ *Views:* {views}\n"
-            f"⏱️ *Duration:* {mins}m {secs}s"
+        await update.message.reply_text(
+            f"🎬 Title: {title}\n👤 Channel: {uploader}"
         )
-
-        await update.message.reply_text(msg, parse_mode="Markdown")
 
     except Exception as e:
         print("YTINFO ERROR:", e)
-        await update.message.reply_text("❌ Video info laane me error 😅")
+        await update.message.reply_text(
+            "⚠ Video details region restriction ki wajah se nahi mil pa rahi.\nTry another video link."
+        )
+
+
 
 
 # ===== MAIN =====
@@ -235,6 +230,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
