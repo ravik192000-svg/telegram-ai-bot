@@ -6,5 +6,7 @@ requests
 ddgs
 yt-dlp
 PyPDF2
+openai
+
 
 
