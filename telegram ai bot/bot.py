@@ -11,6 +11,7 @@ import requests
 from ddgs import DDGS
 import yt_dlp
 import logging
+import PyPDF2
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -23,6 +24,16 @@ client = Groq(api_key=GROQ_API_KEY)
 
 user_memory = {}
 user_mode = {}
+
+# ===== PDF TEXT EXTRACT FUNCTION =====
+def extract_text_from_pdf(file_path):
+    text = ""
+    with open(file_path, "rb") as f:
+        reader = PyPDF2.PdfReader(f)
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+    return text[:6000]  # limit to avoid token overflow
+
 
 # ===== PERSONALITY COMMANDS =====
 async def set_funny(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -207,6 +218,26 @@ async def ytinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚠ Video details region restriction ki wajah se nahi mil pa rahi.\nTry another video link."
         )
 
+# ==== PDF HANDLER =====
+async def handle_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    document = update.message.document
+
+    if document.mime_type != "application/pdf":
+        await update.message.reply_text("❌ Please send a PDF file.")
+        return
+
+    file = await document.get_file()
+    await file.download_to_drive("file.pdf")
+
+    pdf_text = extract_text_from_pdf("file.pdf")
+
+    user_id = update.message.from_user.id
+    user_memory[user_id] = [
+        {"role": "system", "content": "Answer using this PDF content."},
+        {"role": "user", "content": pdf_text}
+    ]
+
+    await update.message.reply_text("📄 PDF loaded! Now ask your question.")
 
 
 
@@ -224,12 +255,15 @@ def main():
     app.add_handler(CommandHandler("teacher", set_teacher))
     app.add_handler(CommandHandler("motivation", set_motivation))
     app.add_handler(CommandHandler("normal", set_normal))
+    app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
+
 
     print("🤖 Bot running...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
 
 
 
