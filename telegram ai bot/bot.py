@@ -497,6 +497,42 @@ async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Song download failed 😅")
 
 
+# -------- IMAGE CAPTION FUNCTION --------
+async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check kare photo aaya ya nahi
+    if not update.message.photo:
+        await update.message.reply_text("Photo bhejo caption ke liye 📸")
+        return
+
+    # Telegram server se image download
+    photo_file = await update.message.photo[-1].get_file()
+    await photo_file.download_to_drive("image.jpg")
+
+    await update.message.reply_text("🖼 Image samajh raha hoon...")
+
+    try:
+        # HuggingFace image caption model API
+        API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
+        headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
+
+        with open("image.jpg", "rb") as f:
+            img_bytes = f.read()
+
+        response = requests.post(API_URL, headers=headers, data=img_bytes)
+
+        result = response.json()[0]["generated_text"]
+
+        await update.message.reply_text(f"📷 Caption: {result}")
+
+    except Exception as e:
+        print("CAPTION ERROR:", e)
+        await update.message.reply_text("Image samajhne me error aa gaya 😅")
+
+    # Image delete
+    os.remove("image.jpg")
+
+
+
 
 
 # -------- BOT MENU COMMANDS SETUP --------
@@ -538,6 +574,8 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, caption_image))
     app.add_handler(CommandHandler("translate", translate))
     app.add_handler(CommandHandler("song", song))
+    app.add_handler(MessageHandler(filters.PHOTO, caption_image))
+
 
     
 
@@ -550,6 +588,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
