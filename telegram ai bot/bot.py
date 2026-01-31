@@ -246,35 +246,38 @@ async def handle_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("📄 PDF loaded! Now ask your question.")
 
-# === DRAW FUNCTION ===
-async def draw_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+# -------- IMAGE GENERATION (FREE HUGGINGFACE) --------
+async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Use: /draw <image description>")
+        await update.message.reply_text("Usage: /draw prompt")
         return
 
     prompt = " ".join(context.args)
 
-    await update.message.reply_text("🎨 Image bana raha hoon (free AI)...")
+    await update.message.chat.send_action(action=ChatAction.UPLOAD_PHOTO)
 
-    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
+    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
     headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
 
     payload = {"inputs": prompt}
 
     try:
         response = requests.post(API_URL, headers=headers, json=payload)
+
+        if response.status_code != 200:
+            print("HF ERROR:", response.text)
+            await update.message.reply_text("Image banane me error aa gaya 😅")
+            return
+
         image_bytes = response.content
 
-        with open("generated.png", "wb") as f:
-            f.write(image_bytes)
-
-        await update.message.reply_photo(photo=open("generated.png", "rb"))
-
-        os.remove("generated.png")
+        await update.message.reply_photo(photo=image_bytes)
 
     except Exception as e:
         print("IMAGE ERROR:", e)
-        await update.message.reply_text("Image generate nahi ho paayi 😅")
+        await update.message.reply_text("Image generation error 😅")
+
 
 
 
@@ -295,7 +298,8 @@ def main():
     app.add_handler(CommandHandler("motivation", set_motivation))
     app.add_handler(CommandHandler("normal", set_normal))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
-    app.add_handler(CommandHandler("draw", draw_image))
+   app.add_handler(CommandHandler("draw", draw))
+
 
 
 
@@ -305,6 +309,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
