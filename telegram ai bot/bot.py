@@ -28,7 +28,7 @@ HF_API_KEY = os.getenv("HF_API_KEY")
 
 client = Groq(api_key=GROQ_API_KEY)
 
-vision_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 
 user_memory = {}
@@ -311,6 +311,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
