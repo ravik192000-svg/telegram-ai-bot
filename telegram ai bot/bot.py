@@ -14,6 +14,8 @@ import logging
 import PyPDF2
 from openai import OpenAI
 import base64
+from telegram import BotCommand
+
 
 
 
@@ -461,18 +463,26 @@ async def translate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-
-
-
-
-
-
+# -------- BOT MENU COMMANDS SETUP --------
+async def set_bot_commands(app):
+    await app.bot.set_my_commands([
+        BotCommand("start", "Bot ko start kare"),
+        BotCommand("help", "Sab commands ki list"),
+        BotCommand("reset", "Memory clear kare"),
+        BotCommand("weather", "Weather check kare"),
+        BotCommand("search", "Google type search"),
+        BotCommand("ytinfo", "YouTube video info"),
+        BotCommand("draw", "AI image generate kare"),
+        BotCommand("remember", "Long memory save kare"),
+        BotCommand("translate", "Language translate kare"),
+    ])
 
 
 # ===== MAIN =====
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
 
+    app.post_init = set_bot_commands
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE, handle_message))
     app.add_handler(MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_group_message))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
@@ -502,6 +512,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
