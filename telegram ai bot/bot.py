@@ -298,7 +298,7 @@ def main():
     app.add_handler(CommandHandler("motivation", set_motivation))
     app.add_handler(CommandHandler("normal", set_normal))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
-   app.add_handler(CommandHandler("draw", draw))
+    app.add_handler(CommandHandler("draw", draw))
 
 
 
@@ -309,6 +309,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
