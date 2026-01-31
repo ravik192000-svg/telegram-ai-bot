@@ -61,6 +61,21 @@ async def set_normal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_mode[update.message.from_user.id] = "normal"
     await update.message.reply_text("🙂 Normal mode ON!")
 
+# -------- RESET MEMORY COMMAND --------
+async def reset_memory(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+
+    # Memory delete
+    if user_id in user_memory:
+        del user_memory[user_id]
+
+    # Mode bhi reset
+    if user_id in user_mode:
+        del user_mode[user_id]
+
+    await update.message.reply_text("🧠 Memory cleared! Ab main sab bhool gaya 😄")
+
+
 # ===== TEXT MESSAGE HANDLER =====
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
@@ -294,6 +309,7 @@ def main():
     app.add_handler(CommandHandler("teacher", set_teacher))
     app.add_handler(CommandHandler("motivation", set_motivation))
     app.add_handler(CommandHandler("normal", set_normal))
+    app.add_handler(CommandHandler("reset", reset_memory))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
     app.add_handler(CommandHandler("draw", draw))
 
@@ -306,6 +322,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
