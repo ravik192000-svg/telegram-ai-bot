@@ -499,47 +499,34 @@ async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # -------- IMAGE CAPTION (AI IMAGE SAMJHEGA) --------
+# -------- IMAGE CAPTION (PHOTO HANDLER) --------
 async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        # Check karo photo aayi hai ya nahi
-        if not update.message.photo:
-            await update.message.reply_text("📷 Photo bhejo pehle")
-            return
+        await update.message.chat.send_action(action=ChatAction.TYPING)
 
-        await update.message.reply_text("🧠 Image samajh raha hoon...")
-
-        # Telegram se photo file lo
+        # 📥 Download photo from Telegram
         photo_file = await update.message.photo[-1].get_file()
         await photo_file.download_to_drive("image.jpg")
 
-        # Image ko base64 me convert karo
-        with open("image.jpg", "rb") as img:
-            img_base64 = base64.b64encode(img.read()).decode("utf-8")
-
-        # HuggingFace Router API endpoint (UPDATED)
-        url = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
-
+        # 🔐 HF API
         headers = {
-            "Authorization": f"Bearer {HF_API_KEY}",
-            "Content-Type": "application/json"
+            "Authorization": f"Bearer {os.getenv('HF_API_KEY')}"
         }
 
-        payload = {
-            "inputs": img_base64
-        }
+        # 🧠 Correct working model endpoint
+        API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
 
-        response = requests.post(url, headers=headers, json=payload)
+        with open("image.jpg", "rb") as f:
+            response = requests.post(API_URL, headers=headers, data=f)
 
-        # Debug ke liye
-        print("HF RAW RESPONSE:", response.text)
-
+        # 🛑 If API fails
         if response.status_code != 200:
-            await update.message.reply_text("❌ Image AI se error aa gaya")
+            print("HF RAW RESPONSE:", response.text)
+            await update.message.reply_text("Image samajhne me error aa gaya 😅")
             return
 
+        # ✅ Parse caption
         result = response.json()
-
-        # Caption extract karo
         caption = result[0]["generated_text"]
 
         await update.message.reply_text(f"🖼 Caption: {caption}")
@@ -549,6 +536,7 @@ async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print("CAPTION ERROR:", e)
         await update.message.reply_text("Image samajhne me error aa gaya 😅")
+
 
 
 
@@ -607,6 +595,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
