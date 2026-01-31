@@ -498,33 +498,47 @@ async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # -------- IMAGE CAPTION FUNCTION --------
-async def image_caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# -------- IMAGE CAPTION COMMAND --------
+async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
+        if not update.message.photo:
+            await update.message.reply_text("📸 Photo bhejo caption ke liye.")
+            return
+
+        await update.message.reply_text("🖼️ Image samajh raha hoon...")
+
+        # Highest quality photo
         photo = update.message.photo[-1]
         file = await photo.get_file()
-        await file.download_to_drive("img.jpg")
+        await file.download_to_drive("image.jpg")
+
+        HF_API_KEY = os.getenv("HF_API_KEY")
+        headers = {"Authorization": f"Bearer {HF_API_KEY}"}
 
         API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
 
-        headers = {
-            "Authorization": f"Bearer {HF_API_KEY}"
-        }
+        with open("image.jpg", "rb") as f:
+            img_bytes = f.read()
 
-        with open("img.jpg", "rb") as f:
-            response = requests.post(API_URL, headers=headers, data=f)
+        response = requests.post(API_URL, headers=headers, data=img_bytes)
+
+        if response.status_code != 200:
+            print("HF ERROR:", response.text)
+            await update.message.reply_text("❌ Image samajhne me error aa gaya.")
+            return
 
         result = response.json()
 
         if isinstance(result, list):
-            caption = result[0]['generated_text']
+            caption = result[0]["generated_text"]
         else:
-            caption = "Image samajh nahi paaya 😅"
+            caption = "Caption generate nahi ho paya 😅"
 
-        await update.message.reply_text(f"🖼️ Image samjha maine:\n{caption}")
+        await update.message.reply_text(f"📝 Caption: {caption}")
 
     except Exception as e:
-        print("HF ERROR:", e)
-        await update.message.reply_text("Image samajhne me error aa gaya 😅")
+        print("CAPTION ERROR:", e)
+        await update.message.reply_text("⚠️ Caption system error")
 
 
 
@@ -570,11 +584,7 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, caption_image))
     app.add_handler(CommandHandler("translate", translate))
     app.add_handler(CommandHandler("song", song))
-    app.add_handler(MessageHandler(filters.PHOTO, image_caption))
-
-
-
-    
+    app.add_handler(MessageHandler(filters.PHOTO, caption_image))
 
 
 
@@ -585,6 +595,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
