@@ -498,28 +498,33 @@ async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # -------- IMAGE CAPTION FUNCTION --------
-async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    photo = update.message.photo[-1]
-    file = await photo.get_file()
-    await file.download_to_drive("img.jpg")
-
-    headers = {
-        "Authorization": f"Bearer {HF_API_KEY}"
-    }
-
-    API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
-
-    with open("img.jpg", "rb") as f:
-        response = requests.post(API_URL, headers=headers, data=f.read())
-
+async def image_caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        caption = response.json()[0]["generated_text"]
-        await update.message.reply_text(f"🖼 Image me ye hai:\n{caption}")
-    except:
-        print("HF ERROR:", response.text)
-        await update.message.reply_text("Image samajhne me error aa gaya 😅")
+        photo = update.message.photo[-1]
+        file = await photo.get_file()
+        await file.download_to_drive("img.jpg")
 
-    os.remove("img.jpg")
+        API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
+
+        headers = {
+            "Authorization": f"Bearer {HF_API_KEY}"
+        }
+
+        with open("img.jpg", "rb") as f:
+            response = requests.post(API_URL, headers=headers, data=f)
+
+        result = response.json()
+
+        if isinstance(result, list):
+            caption = result[0]['generated_text']
+        else:
+            caption = "Image samajh nahi paaya 😅"
+
+        await update.message.reply_text(f"🖼️ Image samjha maine:\n{caption}")
+
+    except Exception as e:
+        print("HF ERROR:", e)
+        await update.message.reply_text("Image samajhne me error aa gaya 😅")
 
 
 
@@ -565,7 +570,8 @@ def main():
     app.add_handler(MessageHandler(filters.PHOTO, caption_image))
     app.add_handler(CommandHandler("translate", translate))
     app.add_handler(CommandHandler("song", song))
-    app.add_handler(MessageHandler(filters.PHOTO, caption_image))
+    app.add_handler(MessageHandler(filters.PHOTO, image_caption))
+
 
 
     
@@ -579,6 +585,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
