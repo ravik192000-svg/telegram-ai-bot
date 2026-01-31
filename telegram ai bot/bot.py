@@ -461,6 +461,42 @@ async def translate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("TRANSLATE ERROR:", e)
         await update.message.reply_text("Translate error 😅")
 
+# -------- SONG DOWNLOAD COMMAND --------
+async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check kare user ne song name diya ya nahi
+    if not context.args:
+        await update.message.reply_text("Use: /song song name")
+        return
+
+    query = " ".join(context.args)
+
+    await update.message.reply_text("🎵 Song search ho raha hai...")
+
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "noplaylist": True,
+        "quiet": True,
+        "outtmpl": "song.%(ext)s",
+        "cookiefile": "cookies.txt",  # optional (ignore if not using)
+    }
+
+    try:
+        # YouTube se first result download karega
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"ytsearch:{query}", download=True)
+            file_path = ydl.prepare_filename(info['entries'][0])
+
+        # Telegram pe audio bhejna
+        await update.message.reply_audio(audio=open(file_path, "rb"))
+
+        # File delete (storage bachane ke liye)
+        os.remove(file_path)
+
+    except Exception as e:
+        print("SONG ERROR:", e)
+        await update.message.reply_text("❌ Song download failed 😅")
+
+
 
 
 # -------- BOT MENU COMMANDS SETUP --------
@@ -501,6 +537,8 @@ def main():
     app.add_handler(CommandHandler("remember", remember))
     app.add_handler(MessageHandler(filters.PHOTO, caption_image))
     app.add_handler(CommandHandler("translate", translate))
+    app.add_handler(CommandHandler("song", song))
+
     
 
 
@@ -512,6 +550,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
