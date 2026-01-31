@@ -312,6 +312,156 @@ async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("HF ERROR:", e)
         await update.message.reply_text("❌ Image generation failed")
 
+# ==== SONG DOWNLOAD ====
+async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check kare command ke baad user ne query diya ya nahi
+    if not context.args:
+        await update.message.reply_text("Use: /song song name")
+        return
+
+    # User ka diya hua song name join kar rahe hain
+    query = " ".join(context.args)
+
+    await update.message.chat.send_action(action=ChatAction.TYPING)
+
+    try:
+        # yt-dlp options set kar rahe hain (sirf info lene ke liye)
+        ydl_opts = {
+            "quiet": True,
+            "skip_download": True,
+            "nocheckcertificate": True,
+            "geo_bypass": True,
+        }
+
+        # yt-dlp se YouTube search karenge
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
+
+        # Important details nikaal rahe hain
+        title = info.get("title")
+        duration = info.get("duration")
+        uploader = info.get("uploader")
+        url = info.get("webpage_url")
+
+        mins, secs = divmod(duration, 60)
+
+        # Final message bana ke bhej rahe hain
+        await update.message.reply_text(
+            f"🎵 {title}\n"
+            f"👤 {uploader}\n"
+            f"⏱ {mins}m {secs}s\n"
+            f"🔗 {url}"
+        )
+
+    except Exception as e:
+        print("SONG ERROR:", e)
+        await update.message.reply_text("Song search me error 😅")
+
+
+# ==== PDF READER =====
+async def readpdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check kare user ne PDF bheja ya nahi
+    if not update.message.document:
+        await update.message.reply_text("Send a PDF file")
+        return
+
+    # Telegram server se file download
+    file = await update.message.document.get_file()
+    await file.download_to_drive("file.pdf")
+
+    try:
+        # PDF open karke text read karte hain
+        reader = PyPDF2.PdfReader("file.pdf")
+        text = ""
+
+        # Har page ka text extract kar rahe hain
+        for page in reader.pages:
+            text += page.extract_text()
+
+        # Sirf first 1000 characters bhej rahe (limit ke liye)
+        await update.message.reply_text(text[:1000])
+
+    except Exception as e:
+        print("PDF ERROR:", e)
+        await update.message.reply_text("PDF read nahi ho paya 😅")
+
+    # File delete (storage bachane ke liye)
+    os.remove("file.pdf")
+
+# === LONG MEMORY ===
+async def remember(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+
+    # Agar user ne memory text nahi diya
+    if not context.args:
+        await update.message.reply_text("Use: /remember text")
+        return
+
+    # User ka text join karke memory me save
+    memory_text = " ".join(context.args)
+    user_memory[user_id] = [{"role": "system", "content": memory_text}]
+
+    await update.message.reply_text("🧠 Memory saved!")
+
+# ==== IMAGE CAPTION ====
+async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check kare photo aaya ya nahi
+    if not update.message.photo:
+        await update.message.reply_text("Send image with caption command")
+        return
+
+    # Photo download
+    photo_file = await update.message.photo[-1].get_file()
+    await photo_file.download_to_drive("image.jpg")
+
+    try:
+        # Image ko binary me convert karke API ko bhej rahe
+        with open("image.jpg", "rb") as f:
+            img_bytes = f.read()
+
+        response = requests.post(
+            "https://router.huggingface.co/huggingface/blip-image-captioning-large",
+            headers={"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"},
+            data=img_bytes
+        )
+
+        result = response.json()[0]["generated_text"]
+
+        # Caption reply
+        await update.message.reply_text(f"🖼️ Caption: {result}")
+
+    except Exception as e:
+        print("CAPTION ERROR:", e)
+        await update.message.reply_text("Image samajh nahi aaya 😅")
+
+    os.remove("image.jpg")
+
+# ==== TRANSLATE ====
+async def translate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check kare user ne text diya ya nahi
+    if not context.args:
+        await update.message.reply_text("Use: /translate text")
+        return
+
+    text = " ".join(context.args)
+
+    try:
+        # Google Translate unofficial API use kar rahe
+        url = f"https://api.mymemory.translated.net/get?q={text}&langpair=en|hi"
+        response = requests.get(url).json()
+
+        # Translated text nikaal rahe
+        translated = response["responseData"]["translatedText"]
+
+        await update.message.reply_text(f"🌍 Translation:\n{translated}")
+
+    except Exception as e:
+        print("TRANSLATE ERROR:", e)
+        await update.message.reply_text("Translate error 😅")
+
+
+
+
 
 
 
@@ -336,6 +486,12 @@ def main():
     app.add_handler(CommandHandler("reset", reset_memory))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
     app.add_handler(CommandHandler("draw", draw))
+    app.add_handler(CommandHandler("song", song))
+    app.add_handler(MessageHandler(filters.Document.PDF, readpdf))
+    app.add_handler(CommandHandler("remember", remember))
+    app.add_handler(MessageHandler(filters.PHOTO, caption_image))
+    app.add_handler(CommandHandler("translate", translate))
+    
 
 
 
@@ -346,6 +502,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
