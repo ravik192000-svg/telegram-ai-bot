@@ -252,36 +252,35 @@ async def handle_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # -------- IMAGE GENERATION (FREE HUGGINGFACE) --------
 async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("❌ Use like: /draw cat wearing sunglasses")
+        await update.message.reply_text("Use like: /draw a cat with sunglasses")
         return
 
     prompt = " ".join(context.args)
 
-    await update.message.chat.send_action(action=ChatAction.UPLOAD_PHOTO)
-
-    API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-2"
+    API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
     headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
+
+    await update.message.reply_text("🎨 Drawing image...")
 
     try:
         response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
 
         if response.status_code != 200:
             print("HF ERROR:", response.text)
-            await update.message.reply_text("❌ Image generation failed 😅")
+            await update.message.reply_text("❌ Image API error aa gaya")
             return
 
         image_bytes = response.content
 
-        with open("generated.png", "wb") as f:
+        with open("image.png", "wb") as f:
             f.write(image_bytes)
 
-        await update.message.reply_photo(photo=open("generated.png", "rb"))
-
-        os.remove("generated.png")
+        await update.message.reply_photo(photo=open("image.png", "rb"))
 
     except Exception as e:
         print("HF ERROR:", e)
-        await update.message.reply_text("⚠ Image error aa gaya")
+        await update.message.reply_text("❌ Image generation failed")
+
 
 
 
@@ -315,6 +314,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
