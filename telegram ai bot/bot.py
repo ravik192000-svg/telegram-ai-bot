@@ -258,7 +258,7 @@ async def draw(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = " ".join(context.args)
 
     API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
-    headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
+    headers = {"Authorization": f"Bearer {HF_API_KEY}"}
 
     await update.message.reply_text("🎨 Drawing image...")
 
@@ -314,6 +314,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
