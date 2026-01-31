@@ -498,47 +498,41 @@ async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # -------- IMAGE CAPTION FUNCTION --------
-# -------- IMAGE CAPTION COMMAND --------
 async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         if not update.message.photo:
-            await update.message.reply_text("📸 Photo bhejo caption ke liye.")
+            await update.message.reply_text("Photo bhejo pehle 📸")
             return
 
-        await update.message.reply_text("🖼️ Image samajh raha hoon...")
+        await update.message.chat.send_action(action=ChatAction.TYPING)
 
-        # Highest quality photo
+        # Highest quality image
         photo = update.message.photo[-1]
         file = await photo.get_file()
-        await file.download_to_drive("image.jpg")
+        img_path = "image.jpg"
+        await file.download_to_drive(img_path)
 
-        HF_API_KEY = os.getenv("HF_API_KEY")
-        headers = {"Authorization": f"Bearer {HF_API_KEY}"}
+        with open(img_path, "rb") as f:
+            image_bytes = f.read()
 
         API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
+        headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
 
-        with open("image.jpg", "rb") as f:
-            img_bytes = f.read()
-
-        response = requests.post(API_URL, headers=headers, data=img_bytes)
+        response = requests.post(API_URL, headers=headers, data=image_bytes)
 
         if response.status_code != 200:
-            print("HF ERROR:", response.text)
-            await update.message.reply_text("❌ Image samajhne me error aa gaya.")
+            await update.message.reply_text(f"HF ERROR: {response.text}")
             return
 
         result = response.json()
 
-        if isinstance(result, list):
-            caption = result[0]["generated_text"]
-        else:
-            caption = "Caption generate nahi ho paya 😅"
-
-        await update.message.reply_text(f"📝 Caption: {caption}")
+        caption = result[0]["generated_text"]
+        await update.message.reply_text(f"🖼 Caption: {caption}")
 
     except Exception as e:
         print("CAPTION ERROR:", e)
-        await update.message.reply_text("⚠️ Caption system error")
+        await update.message.reply_text("Image samajhne me error aa gaya 😅")
+
 
 
 
@@ -595,6 +589,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
