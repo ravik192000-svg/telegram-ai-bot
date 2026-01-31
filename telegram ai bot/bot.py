@@ -194,38 +194,30 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ===== YTINFO =====
 async def ytinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("❌ Use like this:\n/ytinfo <YouTube URL>")
+        await update.message.reply_text("Use like: /ytinfo song name")
         return
 
-    url = context.args[0]
-
-    await update.message.chat.send_action(action=ChatAction.TYPING)
-
-    ydl_opts = {
-        "quiet": True,
-        "user_agent": "Mozilla/5.0",
-        "skip_download": True,
-        "nocheckcertificate": True,
-        "geo_bypass": True,
-        "extract_flat": True,  # important fallback mode
-    }
+    query = " ".join(context.args)
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+        with DDGS() as ddgs:
+            results = list(ddgs.text(f"{query} site:youtube.com", max_results=1))
 
-        title = info.get("title", "N/A")
-        uploader = info.get("uploader", "N/A")
+        if not results:
+            await update.message.reply_text("Video nahi mila 😅")
+            return
+
+        video_url = results[0]["href"]
+        title = results[0]["title"]
 
         await update.message.reply_text(
-            f"🎬 Title: {title}\n👤 Channel: {uploader}"
+            f"🎬 {title}\n🔗 {video_url}"
         )
 
     except Exception as e:
         print("YTINFO ERROR:", e)
-        await update.message.reply_text(
-            "⚠ Video details region restriction ki wajah se nahi mil pa rahi.\nTry another video link."
-        )
+        await update.message.reply_text("YouTube search error 😅")
+
 
 # ==== PDF HANDLER =====
 async def handle_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -314,6 +306,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
