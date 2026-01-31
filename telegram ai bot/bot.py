@@ -526,18 +526,26 @@ async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f"HF ERROR: {response.text}")
             return
         try:
-            result = response.json()
-            caption = result[0]["generated_text"]
-    except Exception as e:
-            print("CAPTION RAW RESPONSE:", response.text)
-        await update.message.reply_text("Image samajhne me error aa gaya 😅")
-        return
+           result = response.json()
 
-        await update.message.reply_text(f"🖼 Caption: {caption}")
+    # Debug print karo (optional)
+           print("HF RESPONSE:", result)
 
-    except Exception as e:
-        print("CAPTION ERROR:", e)
-        await update.message.reply_text("Image samajhne me error aa gaya 😅")
+    # Agar error aaya HF se
+           if isinstance(result, dict) and "error" in result:
+               print("HF ERROR:", result)
+               await update.message.reply_text("Image samajhne me error aa gaya 😅")
+               return
+
+    # Normal caption case
+    caption = result[0]["generated_text"]
+
+    await update.message.reply_text(f"🖼 Caption: {caption}")
+
+except Exception as e:
+    print("CAPTION ERROR:", e)
+    print("RAW RESPONSE:", response.text)
+    await update.message.reply_text("Image samajhne me error aa gaya 😅")
 
 
 
@@ -595,6 +603,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
