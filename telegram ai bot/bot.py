@@ -254,19 +254,19 @@ async def draw_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     prompt = " ".join(context.args)
 
-    await update.message.reply_text("🎨 Image bana raha hoon...")
+    await update.message.reply_text("🎨 Image bana raha hoon (free AI)...")
+
+    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
+    headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
+
+    payload = {"inputs": prompt}
 
     try:
-        result = vision_client.images.generate(
-            model="gpt-image-1",
-            prompt=prompt,
-            size="1024x1024"
-        )
-
-        image_base64 = result.data[0].b64_json
+        response = requests.post(API_URL, headers=headers, json=payload)
+        image_bytes = response.content
 
         with open("generated.png", "wb") as f:
-            f.write(base64.b64decode(image_base64))
+            f.write(image_bytes)
 
         await update.message.reply_photo(photo=open("generated.png", "rb"))
 
@@ -274,7 +274,8 @@ async def draw_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         print("IMAGE ERROR:", e)
-        await update.message.reply_text("Image generate karne me error 😅")
+        await update.message.reply_text("Image generate nahi ho paayi 😅")
+
 
 
 
@@ -298,11 +299,13 @@ def main():
 
 
 
+
     print("🤖 Bot running...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
 
 
 
