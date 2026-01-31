@@ -499,37 +499,28 @@ async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # -------- IMAGE CAPTION FUNCTION --------
 async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Check kare photo aaya ya nahi
-    if not update.message.photo:
-        await update.message.reply_text("Photo bhejo caption ke liye 📸")
-        return
+    photo = update.message.photo[-1]
+    file = await photo.get_file()
+    await file.download_to_drive("img.jpg")
 
-    # Telegram server se image download
-    photo_file = await update.message.photo[-1].get_file()
-    await photo_file.download_to_drive("image.jpg")
+    headers = {
+        "Authorization": f"Bearer {HF_API_KEY}"
+    }
 
-    await update.message.reply_text("🖼 Image samajh raha hoon...")
+    API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
+
+    with open("img.jpg", "rb") as f:
+        response = requests.post(API_URL, headers=headers, data=f.read())
 
     try:
-        # HuggingFace image caption model API
-        API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
-        headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
-
-        with open("image.jpg", "rb") as f:
-            img_bytes = f.read()
-
-        response = requests.post(API_URL, headers=headers, data=img_bytes)
-
-        result = response.json()[0]["generated_text"]
-
-        await update.message.reply_text(f"📷 Caption: {result}")
-
-    except Exception as e:
-        print("CAPTION ERROR:", e)
+        caption = response.json()[0]["generated_text"]
+        await update.message.reply_text(f"🖼 Image me ye hai:\n{caption}")
+    except:
+        print("HF ERROR:", response.text)
         await update.message.reply_text("Image samajhne me error aa gaya 😅")
 
-    # Image delete
-    os.remove("image.jpg")
+    os.remove("img.jpg")
+
 
 
 
@@ -588,6 +579,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
