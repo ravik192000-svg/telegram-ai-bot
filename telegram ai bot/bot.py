@@ -23,6 +23,8 @@ logging.basicConfig(level=logging.ERROR)
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
+HF_API_KEY = os.getenv("HF_API_KEY")
+
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -309,6 +311,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
