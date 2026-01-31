@@ -499,37 +499,37 @@ async def song(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # -------- IMAGE CAPTION (AI IMAGE SAMJHEGA) --------
-# -------- IMAGE CAPTION HANDLER --------
 async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        await update.message.chat.send_action(action=ChatAction.TYPING)
+        await update.message.reply_text("🧠 Image samajh raha hoon...")
 
-        # Telegram se image download karo
         photo = update.message.photo[-1]
         file = await photo.get_file()
-        image_bytes = await file.download_as_bytearray()
+        await file.download_to_drive("image.jpg")
 
-        # HuggingFace API
-        HF_API_KEY = os.getenv("HF_API_KEY")
         API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
 
         headers = {
-            "Authorization": f"Bearer {HF_API_KEY}",
-            "Content-Type": "application/octet-stream"
+            "Authorization": f"Bearer {os.getenv('HF_API_KEY')}"
         }
 
-        response = requests.post(API_URL, headers=headers, data=image_bytes)
+        with open("image.jpg", "rb") as f:
+            response = requests.post(API_URL, headers=headers, data=f)
 
-        # Debug ke liye
         print("HF RAW RESPONSE:", response.text)
 
-        result = response.json()
+        try:
+            result = response.json()
 
-        # Caption nikaalo
-        if isinstance(result, list) and "generated_text" in result[0]:
-            caption = result[0]["generated_text"]
-        else:
-            await update.message.reply_text("❌ Caption generate nahi ho paaya 😅")
+            # HF sometimes list deta hai
+            if isinstance(result, list):
+                caption = result[0]["generated_text"]
+            else:
+                caption = result["generated_text"]
+
+        except Exception as e:
+            print("CAPTION RAW RESPONSE:", response.text)
+            await update.message.reply_text("❌ Image samajhne me error aa gaya 😅")
             return
 
         await update.message.reply_text(f"🖼 Caption: {caption}")
@@ -597,6 +597,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
