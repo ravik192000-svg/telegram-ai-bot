@@ -515,7 +515,9 @@ async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open(img_path, "rb") as f:
             image_bytes = f.read()
 
-        API_URL = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
+      
+        url = "https://router.huggingface.co/hf-inference/models/Salesforce/blip-image-captioning-base"
+
         headers = {"Authorization": f"Bearer {os.getenv('HF_API_KEY')}"}
 
         response = requests.post(API_URL, headers=headers, data=image_bytes)
@@ -523,10 +525,14 @@ async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if response.status_code != 200:
             await update.message.reply_text(f"HF ERROR: {response.text}")
             return
+        try:
+            result = response.json()
+            caption = result[0]["generated_text"]
+    except Exception as e:
+            print("CAPTION RAW RESPONSE:", response.text)
+        await update.message.reply_text("Image samajhne me error aa gaya 😅")
+        return
 
-        result = response.json()
-
-        caption = result[0]["generated_text"]
         await update.message.reply_text(f"🖼 Caption: {caption}")
 
     except Exception as e:
@@ -589,6 +595,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
