@@ -7,11 +7,13 @@ ddgs
 yt-dlp
 PyPDF2
 openai
-moviepy
-Pillow
-gtts
+moviepy==1.0.3
 imageio
 imageio-ffmpeg
+gTTS
+Pillow
+
+
 
 
 
