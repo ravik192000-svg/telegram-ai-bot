@@ -548,14 +548,25 @@ async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def download_image(url, filename):
-    r = requests.get(url, timeout=30)
+    try:
+        r = requests.get(url, timeout=25)
 
-    # Agar image nahi aayi
-    if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
-        raise ValueError("Invalid image response")
+        # Agar image sahi nahi aayi
+        if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
+            print("⚠️ Using fallback image")
+            with open("fallback.jpg", "rb") as f:
+                with open(filename, "wb") as out:
+                    out.write(f.read())
+            return
 
-    with open(filename, "wb") as f:
-        f.write(r.content)
+        with open(filename, "wb") as f:
+            f.write(r.content)
+
+    except Exception as e:
+        print("⚠️ Image fetch failed, using fallback:", e)
+        with open("fallback.jpg", "rb") as f:
+            with open(filename, "wb") as out:
+                out.write(f.read())
 
 
 async def text_to_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -679,6 +690,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
