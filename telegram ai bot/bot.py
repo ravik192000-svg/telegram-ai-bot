@@ -540,6 +540,53 @@ async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
+# -------- TEXT TO VIDEO --------
+async def text_to_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Use: /video topic")
+        return
+
+    prompt = " ".join(context.args)
+    await update.message.reply_text("🎬 Video bana raha hoon...")
+
+    # 1️⃣ Generate AI script
+    script = f"This video shows {prompt}. It is an amazing futuristic scene."
+
+    # 2️⃣ Text to Speech
+    tts = gTTS(script)
+    tts.save("voice.mp3")
+
+    # 3️⃣ Generate images
+    image_files = []
+    for i in range(3):
+        img_url = f"https://image.pollinations.ai/prompt/{prompt} {i}"
+        img_data = requests.get(img_url).content
+        file_name = f"img{i}.jpg"
+        with open(file_name, 'wb') as f:
+            f.write(img_data)
+        image_files.append(file_name)
+
+    # 4️⃣ Make video from images
+    clips = [ImageClip(img).set_duration(3) for img in image_files]
+    video = concatenate_videoclips(clips, method="compose")
+
+    # Add audio
+    audio = AudioFileClip("voice.mp3")
+    final = video.set_audio(audio)
+
+    final.write_videofile("video.mp4", fps=24)
+
+    await update.message.reply_video(video=open("video.mp4", "rb"))
+
+    # Cleanup
+    os.remove("voice.mp3")
+    os.remove("video.mp4")
+    for img in image_files:
+        os.remove(img)
+
+
+
+
 
 
 
@@ -587,6 +634,8 @@ def main():
     app.add_handler(CommandHandler("translate", translate))
     app.add_handler(CommandHandler("song", song))
     app.add_handler(MessageHandler(filters.PHOTO, caption_image))
+    app.add_handler(CommandHandler("video", text_to_video))
+
 
 
 
@@ -597,6 +646,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
