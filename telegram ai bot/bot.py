@@ -15,6 +15,12 @@ import PyPDF2
 from openai import OpenAI
 import base64
 from telegram import BotCommand
+from gtts import gTTS
+from moviepy.editor import ImageClip, concatenate_videoclips, AudioFileClip
+from PIL import Image
+import requests
+import os
+
 
 
 
@@ -646,6 +652,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
