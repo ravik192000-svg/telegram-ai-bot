@@ -20,6 +20,7 @@ from moviepy.editor import ImageClip, concatenate_videoclips, AudioFileClip
 from PIL import Image
 import requests
 import os
+import numpy as np
 
 
 
@@ -546,7 +547,17 @@ async def caption_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-# -------- TEXT TO VIDEO --------
+def download_image(url, filename):
+    r = requests.get(url, timeout=30)
+
+    # Agar image nahi aayi
+    if r.status_code != 200 or "image" not in r.headers.get("Content-Type", ""):
+        raise ValueError("Invalid image response")
+
+    with open(filename, "wb") as f:
+        f.write(r.content)
+
+
 async def text_to_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Use: /video topic")
@@ -555,40 +566,56 @@ async def text_to_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = " ".join(context.args)
     await update.message.reply_text("🎬 Video bana raha hoon...")
 
-    # 1️⃣ Generate AI script
-    script = f"This video shows {prompt}. It is an amazing futuristic scene."
-
-    # 2️⃣ Text to Speech
+    # 🎙️ Voice
+    script = f"This video shows {prompt}"
     tts = gTTS(script)
     tts.save("voice.mp3")
 
-    # 3️⃣ Generate images
     image_files = []
-    for i in range(3):
-        img_url = f"https://image.pollinations.ai/prompt/{prompt} {i}"
-        img_data = requests.get(img_url).content
-        file_name = f"img{i}.jpg"
-        with open(file_name, 'wb') as f:
-            f.write(img_data)
-        image_files.append(file_name)
+    clips = []
 
-    # 4️⃣ Make video from images
-    clips = [ImageClip(img).set_duration(3) for img in image_files]
-    video = concatenate_videoclips(clips, method="compose")
+    try:
+        # 🖼️ Images (sirf 2 – Railway safe)
+        for i in range(2):
+            img_url = f"https://image.pollinations.ai/prompt/{prompt}?seed={i}"
+            filename = f"img{i}.jpg"
 
-    # Add audio
-    audio = AudioFileClip("voice.mp3")
-    final = video.set_audio(audio)
+            download_image(img_url, filename)
+            image_files.append(filename)
 
-    final.write_videofile("video.mp4", fps=24)
+            # 🔥 PIL → numpy → ImageClip (SAFE)
+            pil_img = Image.open(filename).convert("RGB")
+            clip = ImageClip(np.array(pil_img)).set_duration(3)
+            clips.append(clip)
 
-    await update.message.reply_video(video=open("video.mp4", "rb"))
+        video = concatenate_videoclips(clips, method="compose")
 
-    # Cleanup
-    os.remove("voice.mp3")
-    os.remove("video.mp4")
-    for img in image_files:
-        os.remove(img)
+        audio = AudioFileClip("voice.mp3")
+        final = video.set_audio(audio)
+
+        final.write_videofile(
+            "video.mp4",
+            fps=24,
+            codec="libx264",
+            audio_codec="aac",
+            logger=None
+        )
+
+        await update.message.reply_video(video=open("video.mp4", "rb"))
+
+    except Exception as e:
+        print("VIDEO ERROR:", e)
+        await update.message.reply_text("Video banane me error aa gaya 😅")
+
+    finally:
+        # 🧹 Cleanup
+        for f in image_files:
+            if os.path.exists(f):
+                os.remove(f)
+        for f in ["voice.mp3", "video.mp4"]:
+            if os.path.exists(f):
+                os.remove(f)
+
 
 
 
@@ -652,6 +679,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
