@@ -7,6 +7,11 @@ ddgs
 yt-dlp
 PyPDF2
 openai
+moviepy
+Pillow
+gtts
+
+
 
 
 
